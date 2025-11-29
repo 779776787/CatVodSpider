@@ -1,12 +1,7 @@
 package com.github.catvod.binrunner.process;
 
 import com.github.catvod.binrunner.config.AutoStartConfig;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
+import com.github.catvod.binrunner.util.FileHelper;
 
 /**
  * Process encapsulation for BinRunner.
@@ -191,7 +186,7 @@ public class BinProcess {
      */
     public String readOutput() {
         if (process == null) return "";
-        return readStream(process.getInputStream());
+        return FileHelper.readStream(process.getInputStream());
     }
 
     /**
@@ -201,21 +196,7 @@ public class BinProcess {
      */
     public String readError() {
         if (process == null) return "";
-        return readStream(process.getErrorStream());
-    }
-
-    private String readStream(InputStream is) {
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (sb.length() > 0) sb.append("\n");
-                sb.append(line);
-            }
-        } catch (IOException e) {
-            // Stream may be closed
-        }
-        return sb.toString();
+        return FileHelper.readStream(process.getErrorStream());
     }
 
     public String getLastOutput() {

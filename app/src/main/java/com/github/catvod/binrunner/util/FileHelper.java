@@ -1,10 +1,12 @@
 package com.github.catvod.binrunner.util;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
@@ -29,9 +31,18 @@ public class FileHelper {
         
         try (FileInputStream fis = new FileInputStream(file)) {
             byte[] data = new byte[(int) file.length()];
-            int bytesRead = fis.read(data);
-            if (bytesRead > 0) {
-                return new String(data, 0, bytesRead, StandardCharsets.UTF_8);
+            int offset = 0;
+            int remaining = data.length;
+            while (remaining > 0) {
+                int bytesRead = fis.read(data, offset, remaining);
+                if (bytesRead == -1) {
+                    break;
+                }
+                offset += bytesRead;
+                remaining -= bytesRead;
+            }
+            if (offset > 0) {
+                return new String(data, 0, offset, StandardCharsets.UTF_8);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -137,10 +148,11 @@ public class FileHelper {
         }
         
         try {
-            // Set readable, writable, executable for owner
-            boolean result = file.setReadable(true, false);
-            result &= file.setWritable(true, true);
-            result &= file.setExecutable(true, false);
+            // Set 755 permissions (rwxr-xr-x)
+            // readable by all, writable by owner only, executable by all
+            boolean result = file.setReadable(true, false);   // r for all
+            result &= file.setWritable(true, true);           // w for owner only
+            result &= file.setExecutable(true, false);        // x for all
             return result;
         } catch (Exception e) {
             e.printStackTrace();
@@ -257,5 +269,32 @@ public class FileHelper {
         }
         int lastDot = filename.lastIndexOf('.');
         return filename.substring(lastDot + 1).toLowerCase();
+    }
+
+    /**
+     * Read input stream to string.
+     * Useful for reading process output streams.
+     *
+     * @param stream input stream to read
+     * @return string content
+     */
+    public static String readStream(InputStream stream) {
+        if (stream == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (sb.length() > 0) {
+                    sb.append("\n");
+                }
+                sb.append(line);
+            }
+        } catch (IOException e) {
+            // Stream may be closed or interrupted
+        }
+        return sb.toString();
     }
 }

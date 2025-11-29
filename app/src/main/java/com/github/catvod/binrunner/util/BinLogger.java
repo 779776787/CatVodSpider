@@ -15,15 +15,17 @@ import java.util.Locale;
 /**
  * Logger utility for BinRunner.
  * Handles log file creation, rotation, and formatted output.
+ * Thread-safe implementation.
  */
 public class BinLogger {
 
     private static final String TAG = "BinLogger";
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy_MM_dd", Locale.US);
-    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm:ss", Locale.US);
+    private static final String DATE_PATTERN = "yyyy_MM_dd";
+    private static final String TIME_PATTERN = "HH:mm:ss";
 
     private final LogConfig config;
     private final File logDir;
+    private final Object lock = new Object();
     private File currentLogFile;
     private PrintWriter writer;
     private boolean initialized;
@@ -32,6 +34,20 @@ public class BinLogger {
         this.config = config;
         this.logDir = new File(config.getPath());
         this.initialized = false;
+    }
+
+    /**
+     * Get thread-safe date formatter.
+     */
+    private String formatDate(Date date) {
+        return new SimpleDateFormat(DATE_PATTERN, Locale.US).format(date);
+    }
+
+    /**
+     * Get thread-safe time formatter.
+     */
+    private String formatTime(Date date) {
+        return new SimpleDateFormat(TIME_PATTERN, Locale.US).format(date);
     }
 
     /**
@@ -45,19 +61,21 @@ public class BinLogger {
             return true;
         }
         
-        try {
-            if (!logDir.exists() && !logDir.mkdirs()) {
+        synchronized (lock) {
+            try {
+                if (!logDir.exists() && !logDir.mkdirs()) {
+                    return false;
+                }
+                
+                currentLogFile = getLogFile();
+                checkRotationLocked();
+                openWriterLocked();
+                initialized = true;
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
                 return false;
             }
-            
-            currentLogFile = getLogFile();
-            checkRotation();
-            openWriter();
-            initialized = true;
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
         }
     }
 
@@ -72,11 +90,11 @@ public class BinLogger {
             return;
         }
         
-        try {
-            checkRotation();
-            
-            String timestamp = TIME_FORMAT.format(new Date());
-            synchronized (this) {
+        synchronized (lock) {
+            try {
+                checkRotationLocked();
+                
+                String timestamp = formatTime(new Date());
                 if (writer != null) {
                     writer.printf("[%s] %s%n", timestamp, command);
                     if (output != null && !output.isEmpty()) {
@@ -85,9 +103,9 @@ public class BinLogger {
                     }
                     writer.flush();
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
@@ -101,18 +119,18 @@ public class BinLogger {
             return;
         }
         
-        try {
-            checkRotation();
-            
-            String timestamp = TIME_FORMAT.format(new Date());
-            synchronized (this) {
+        synchronized (lock) {
+            try {
+                checkRotationLocked();
+                
+                String timestamp = formatTime(new Date());
                 if (writer != null) {
                     writer.printf("[%s] [INFO] %s%n", timestamp, message);
                     writer.flush();
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
@@ -127,11 +145,11 @@ public class BinLogger {
             return;
         }
         
-        try {
-            checkRotation();
-            
-            String timestamp = TIME_FORMAT.format(new Date());
-            synchronized (this) {
+        synchronized (lock) {
+            try {
+                checkRotationLocked();
+                
+                String timestamp = formatTime(new Date());
                 if (writer != null) {
                     writer.printf("[%s] [ERROR] %s%n", timestamp, message);
                     if (error != null) {
@@ -139,35 +157,37 @@ public class BinLogger {
                     }
                     writer.flush();
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
     /**
      * Check if log rotation is needed and rotate if necessary.
+     * Must be called within synchronized block.
      */
-    private void checkRotation() {
+    private void checkRotationLocked() {
         if (currentLogFile == null || !currentLogFile.exists()) {
             currentLogFile = getLogFile();
-            openWriter();
+            openWriterLocked();
             return;
         }
         
         long sizeKB = currentLogFile.length() / 1024;
         if (sizeKB >= config.getMaxSize()) {
-            rotate();
+            rotateLocked();
         }
     }
 
     /**
      * Rotate the log file.
+     * Must be called within synchronized block.
      */
-    private void rotate() {
-        closeWriter();
+    private void rotateLocked() {
+        closeWriterLocked();
         
-        String baseName = DATE_FORMAT.format(new Date());
+        String baseName = formatDate(new Date());
         int index = 1;
         
         File rotatedFile;
@@ -178,7 +198,7 @@ public class BinLogger {
         
         if (currentLogFile.renameTo(rotatedFile)) {
             currentLogFile = getLogFile();
-            openWriter();
+            openWriterLocked();
         }
     }
 
@@ -188,16 +208,17 @@ public class BinLogger {
      * @return log file for today
      */
     private File getLogFile() {
-        String fileName = DATE_FORMAT.format(new Date()) + ".log";
+        String fileName = formatDate(new Date()) + ".log";
         return new File(logDir, fileName);
     }
 
     /**
      * Open the log writer.
+     * Must be called within synchronized block.
      */
-    private void openWriter() {
+    private void openWriterLocked() {
         try {
-            closeWriter();
+            closeWriterLocked();
             writer = new PrintWriter(new OutputStreamWriter(
                 new FileOutputStream(currentLogFile, true), StandardCharsets.UTF_8), true);
         } catch (IOException e) {
@@ -207,8 +228,9 @@ public class BinLogger {
 
     /**
      * Close the log writer.
+     * Must be called within synchronized block.
      */
-    private void closeWriter() {
+    private void closeWriterLocked() {
         if (writer != null) {
             writer.close();
             writer = null;
@@ -219,7 +241,9 @@ public class BinLogger {
      * Close the logger and release resources.
      */
     public void close() {
-        closeWriter();
-        initialized = false;
+        synchronized (lock) {
+            closeWriterLocked();
+            initialized = false;
+        }
     }
 }

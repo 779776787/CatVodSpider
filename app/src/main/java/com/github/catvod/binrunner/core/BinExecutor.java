@@ -6,12 +6,10 @@ import com.github.catvod.binrunner.process.ProcessResult;
 import com.github.catvod.binrunner.process.ProcessState;
 import com.github.catvod.binrunner.util.BinLogger;
 import com.github.catvod.binrunner.util.EnvBuilder;
+import com.github.catvod.binrunner.util.FileHelper;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -102,8 +100,8 @@ public class BinExecutor {
             }
 
             // Read output
-            String output = readStream(process.getInputStream());
-            String error = readStream(process.getErrorStream());
+            String output = FileHelper.readStream(process.getInputStream());
+            String error = FileHelper.readStream(process.getErrorStream());
             int exitCode = process.exitValue();
 
             long executionTime = System.currentTimeMillis() - startTime;
@@ -335,28 +333,5 @@ public class BinExecutor {
         }
 
         return result;
-    }
-
-    /**
-     * Read input stream to string.
-     *
-     * @param stream input stream
-     * @return string content
-     */
-    private String readStream(java.io.InputStream stream) {
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(stream, StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (sb.length() > 0) {
-                    sb.append("\n");
-                }
-                sb.append(line);
-            }
-        } catch (IOException e) {
-            // Stream may be closed
-        }
-        return sb.toString();
     }
 }
