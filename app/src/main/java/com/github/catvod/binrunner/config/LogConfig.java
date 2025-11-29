@@ -57,9 +57,14 @@ public class LogConfig {
      * @return 配置对象
      */
     public static LogConfig fromJson(String json) {
+        if (json == null || json.isEmpty()) {
+            return new LogConfig();
+        }
         try {
-            return new Gson().fromJson(json, LogConfig.class);
-        } catch (Exception e) {
+            LogConfig config = new Gson().fromJson(json, LogConfig.class);
+            return config != null ? config : new LogConfig();
+        } catch (com.google.gson.JsonSyntaxException e) {
+            // JSON 格式错误，返回默认配置
             return new LogConfig();
         }
     }

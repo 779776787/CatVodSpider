@@ -34,6 +34,28 @@ public abstract class BaseRunner {
         this.envManager = envManager;
         this.executor = new BinExecutor(envManager);
         this.gson = new Gson();
+        
+        // 验证脚本文件路径
+        validateScriptPath();
+    }
+
+    /**
+     * 验证脚本文件路径
+     */
+    private void validateScriptPath() {
+        if (scriptPath == null || scriptPath.isEmpty()) {
+            BinLogger.warn("脚本路径为空");
+            return;
+        }
+        
+        File scriptFile = new File(scriptPath);
+        if (!scriptFile.exists()) {
+            BinLogger.warn("脚本文件不存在: " + scriptPath);
+        } else if (!scriptFile.isFile()) {
+            BinLogger.warn("脚本路径不是文件: " + scriptPath);
+        } else if (!scriptFile.canRead()) {
+            BinLogger.warn("脚本文件无法读取: " + scriptPath);
+        }
     }
 
     /**

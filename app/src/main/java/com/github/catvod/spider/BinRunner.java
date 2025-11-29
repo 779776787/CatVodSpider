@@ -179,11 +179,10 @@ public class BinRunner extends Spider {
 
     /**
      * 执行自动启动命令
+     * 自动启动功能已预留接口，可在未来版本中实现
      */
     private void executeAutoStart() {
-        // 这里可以从配置中读取自动启动命令并执行
         BinLogger.debug("检查自动启动命令");
-        // 暂时不实现自动启动功能，可以后续扩展
     }
 
     /**

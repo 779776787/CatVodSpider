@@ -75,9 +75,14 @@ public class SettingsConfig {
      * @return 配置对象
      */
     public static SettingsConfig fromJson(String json) {
+        if (json == null || json.isEmpty()) {
+            return new SettingsConfig();
+        }
         try {
-            return new Gson().fromJson(json, SettingsConfig.class);
-        } catch (Exception e) {
+            SettingsConfig config = new Gson().fromJson(json, SettingsConfig.class);
+            return config != null ? config : new SettingsConfig();
+        } catch (com.google.gson.JsonSyntaxException e) {
+            // JSON 格式错误，返回默认配置
             return new SettingsConfig();
         }
     }

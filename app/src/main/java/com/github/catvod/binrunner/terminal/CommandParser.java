@@ -68,14 +68,40 @@ public class CommandParser {
             sb.append(command);
             for (String arg : args) {
                 sb.append(" ");
-                // 如果参数包含空格，用引号包裹
-                if (arg.contains(" ")) {
-                    sb.append("\"").append(arg).append("\"");
-                } else {
-                    sb.append(arg);
-                }
+                // 转义参数中的特殊字符
+                sb.append(escapeArg(arg));
             }
             return sb.toString();
+        }
+
+        /**
+         * 转义命令行参数
+         * @param arg 原始参数
+         * @return 转义后的参数
+         */
+        private String escapeArg(String arg) {
+            if (arg == null || arg.isEmpty()) {
+                return "\"\"";
+            }
+            // 检查是否需要引号包裹
+            boolean needsQuotes = arg.contains(" ") || arg.contains("\t") || 
+                                  arg.contains("\"") || arg.contains("'") ||
+                                  arg.contains("\\") || arg.contains("$") ||
+                                  arg.contains("`") || arg.contains("!") ||
+                                  arg.contains("*") || arg.contains("?") ||
+                                  arg.contains("[") || arg.contains("]") ||
+                                  arg.contains("(") || arg.contains(")") ||
+                                  arg.contains("{") || arg.contains("}") ||
+                                  arg.contains("|") || arg.contains("&") ||
+                                  arg.contains(";") || arg.contains("<") ||
+                                  arg.contains(">");
+            
+            if (!needsQuotes) {
+                return arg;
+            }
+            
+            // 使用单引号包裹，并转义单引号
+            return "'" + arg.replace("'", "'\\''") + "'";
         }
 
         /**

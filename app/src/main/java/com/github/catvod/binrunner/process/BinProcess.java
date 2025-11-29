@@ -73,7 +73,19 @@ public class BinProcess {
             long executionTime = endTime - startTime;
 
             if (!completed) {
-                process.destroyForcibly();
+                // 先尝试优雅终止，给进程一点时间清理资源
+                process.destroy();
+                try {
+                    // 等待1秒让进程优雅退出
+                    boolean gracefulExit = process.waitFor(1000, TimeUnit.MILLISECONDS);
+                    if (!gracefulExit) {
+                        // 如果仍未退出，强制终止
+                        process.destroyForcibly();
+                    }
+                } catch (InterruptedException ie) {
+                    process.destroyForcibly();
+                    Thread.currentThread().interrupt();
+                }
                 state = ProcessState.TIMEOUT;
                 return ProcessResult.timeout(executionTime);
             }

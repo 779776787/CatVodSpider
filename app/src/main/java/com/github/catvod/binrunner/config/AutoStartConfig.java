@@ -32,9 +32,14 @@ public class AutoStartConfig {
      * @return 配置对象
      */
     public static AutoStartConfig fromJson(String json) {
+        if (json == null || json.isEmpty()) {
+            return new AutoStartConfig();
+        }
         try {
-            return new Gson().fromJson(json, AutoStartConfig.class);
-        } catch (Exception e) {
+            AutoStartConfig config = new Gson().fromJson(json, AutoStartConfig.class);
+            return config != null ? config : new AutoStartConfig();
+        } catch (com.google.gson.JsonSyntaxException e) {
+            // JSON 格式错误，返回默认配置
             return new AutoStartConfig();
         }
     }

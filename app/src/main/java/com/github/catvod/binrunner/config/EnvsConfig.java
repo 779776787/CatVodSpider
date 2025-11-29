@@ -33,9 +33,14 @@ public class EnvsConfig {
      * @return 配置对象
      */
     public static EnvsConfig fromJson(String json) {
+        if (json == null || json.isEmpty()) {
+            return new EnvsConfig();
+        }
         try {
-            return new Gson().fromJson(json, EnvsConfig.class);
-        } catch (Exception e) {
+            EnvsConfig config = new Gson().fromJson(json, EnvsConfig.class);
+            return config != null ? config : new EnvsConfig();
+        } catch (com.google.gson.JsonSyntaxException e) {
+            // JSON 格式错误，返回默认配置
             return new EnvsConfig();
         }
     }
