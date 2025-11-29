@@ -48,10 +48,20 @@ try {
         throw new Error('无法读取爬虫脚本: ' + spiderPath);
     }
     
-    // 执行爬虫脚本
-    spider = std.evalScript(spiderCode + '\n;spider || __spider__', { 
+    // 执行爬虫脚本，确保脚本导出 spider 对象
+    // 先执行脚本，然后检查全局 spider 变量
+    std.evalScript(spiderCode, { 
         backtrace_barrier: true 
     });
+    
+    // 检查脚本是否定义了 spider 对象
+    if (typeof spider !== 'undefined') {
+        // spider 已在脚本中定义为全局变量
+    } else if (typeof __spider__ !== 'undefined') {
+        spider = __spider__;
+    } else {
+        throw new Error('爬虫脚本未导出 spider 对象');
+    }
     
     if (!spider) {
         throw new Error('爬虫脚本未导出 spider 对象');

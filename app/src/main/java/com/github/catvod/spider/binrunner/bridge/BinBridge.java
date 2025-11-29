@@ -168,8 +168,17 @@ public class BinBridge {
             String body = "";
             if (contentLength > 0) {
                 char[] buffer = new char[contentLength];
-                reader.read(buffer, 0, contentLength);
-                body = new String(buffer);
+                int offset = 0;
+                int remaining = contentLength;
+                while (remaining > 0) {
+                    int charsRead = reader.read(buffer, offset, remaining);
+                    if (charsRead == -1) {
+                        break;
+                    }
+                    offset += charsRead;
+                    remaining -= charsRead;
+                }
+                body = new String(buffer, 0, offset);
             }
 
             // 处理请求

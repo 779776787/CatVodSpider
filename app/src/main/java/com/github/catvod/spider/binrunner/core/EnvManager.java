@@ -19,10 +19,24 @@ import java.util.Map;
  */
 public class EnvManager {
 
-    // 用户目录路径
-    public static final String USER_ENVS_DIR = "/storage/emulated/0/TV/envs";
+    // 默认用户目录路径（可通过环境变量 BINRUNNER_ENVS_DIR 覆盖）
+    private static final String DEFAULT_USER_ENVS_DIR = "/storage/emulated/0/TV/envs";
+    
+    // 用户目录路径（运行时确定）
+    public static String USER_ENVS_DIR = getEnvsDirFromEnvironment();
     // 用户配置文件路径
-    public static final String USER_CONFIG_FILE = USER_ENVS_DIR + "/envs.json";
+    public static String USER_CONFIG_FILE = USER_ENVS_DIR + "/envs.json";
+    
+    /**
+     * 从环境变量获取用户目录路径
+     */
+    private static String getEnvsDirFromEnvironment() {
+        String envDir = System.getenv("BINRUNNER_ENVS_DIR");
+        if (envDir != null && !envDir.isEmpty()) {
+            return envDir;
+        }
+        return DEFAULT_USER_ENVS_DIR;
+    }
 
     // 私有目录名称
     private static final String PRIVATE_DIR_NAME = "binrunner";

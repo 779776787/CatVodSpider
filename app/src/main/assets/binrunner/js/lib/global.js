@@ -173,7 +173,15 @@ function htmlDecode(str) {
 
 /**
  * 移除 HTML 标签
+ * 注意：此函数仅用于文本显示，不应用于安全场景
  */
 function stripTags(str) {
-    return str.replace(/<[^>]*>/g, '');
+    // 反复替换直到没有标签为止，防止嵌套标签绕过
+    var prev = str;
+    var result = str.replace(/<[^>]*>/g, '');
+    while (result !== prev) {
+        prev = result;
+        result = result.replace(/<[^>]*>/g, '');
+    }
+    return result;
 }

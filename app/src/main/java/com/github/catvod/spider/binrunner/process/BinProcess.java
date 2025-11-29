@@ -144,6 +144,9 @@ public class BinProcess {
         return cancelled;
     }
 
+    // 进程销毁等待超时时间（秒）
+    private static final int DESTROY_TIMEOUT_SECONDS = 3;
+
     /**
      * 销毁进程
      */
@@ -151,7 +154,7 @@ public class BinProcess {
         if (process != null) {
             process.destroy();
             try {
-                if (!process.waitFor(3, TimeUnit.SECONDS)) {
+                if (!process.waitFor(DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                     process.destroyForcibly();
                 }
             } catch (InterruptedException ignored) {

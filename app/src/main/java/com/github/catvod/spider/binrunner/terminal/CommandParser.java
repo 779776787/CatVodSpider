@@ -236,8 +236,13 @@ public class CommandParser {
                     }
                 } else {
                     // $VAR 格式
-                    while (end < line.length() && (Character.isLetterOrDigit(line.charAt(end)) || line.charAt(end) == '_')) {
-                        end++;
+                    while (end < line.length()) {
+                        char ch = line.charAt(end);
+                        if (Character.isLetterOrDigit(ch) || ch == '_') {
+                            end++;
+                        } else {
+                            break;
+                        }
                     }
                     if (end > start) {
                         String varName = line.substring(start, end);

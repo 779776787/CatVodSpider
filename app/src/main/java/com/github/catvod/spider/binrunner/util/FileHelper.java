@@ -147,7 +147,16 @@ public class FileHelper {
         try {
             byte[] data = new byte[(int) file.length()];
             try (FileInputStream fis = new FileInputStream(file)) {
-                fis.read(data);
+                int offset = 0;
+                int remaining = data.length;
+                while (remaining > 0) {
+                    int bytesRead = fis.read(data, offset, remaining);
+                    if (bytesRead == -1) {
+                        break;
+                    }
+                    offset += bytesRead;
+                    remaining -= bytesRead;
+                }
             }
             return new String(data, StandardCharsets.UTF_8);
         } catch (IOException e) {
